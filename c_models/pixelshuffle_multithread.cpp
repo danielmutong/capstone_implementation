@@ -9,8 +9,6 @@ using namespace std;
 #define SCALE 2
 #define BATCH_SIZE 1
 
-std::vector<std::vector<float>> final_channels(3, std::vector<float>(256)); //3x256
-
 float input_arr[BATCH_SIZE][CH][DIM][DIM];
 float final_arr[BATCH_SIZE][CH / (SCALE * SCALE)][DIM * SCALE][DIM * SCALE];
 
@@ -49,44 +47,45 @@ void process_4_channels(int start, int index)
     int arr2 = start + 2;
     int arr3 = start + 3;
     int channel_counter = 0;
+    int row_counter = 0;
+    int i0 = 0; int i1 = 0; int i2 = 0; int i3 = 0;
+    int j0 = 0; int j1 = 0; int j2 = 0; int j3 = 0;
 
     for (int i = 0; i < DIM; i++)
     {
         for (int j = 0; j < DIM; j++)
         {
-            final_channels[index][channel_counter] = input_arr[0][arr0][i][j];
+
+            final_arr[0][index][row_counter][channel_counter] = input_arr[0][arr0][i0][j0];
+            j0++;
             channel_counter++;
-            final_channels[index][channel_counter] = input_arr[0][arr1][i][j];
+            final_arr[0][index][row_counter][channel_counter] = input_arr[0][arr1][i1][j1];
+            j1++;
             channel_counter++;
         }
+        i0++;
+        i1++;
+        channel_counter = 0;
+        j0 = 0; j1 = 0; j2 = 0; j3 = 0;
+        row_counter ++;
+
         for (int j = 0; j < DIM; j++)
         {
-            final_channels[index][channel_counter] = input_arr[0][arr2][i][j];
+            final_arr[0][index][row_counter][channel_counter] = input_arr[0][arr2][i2][j2];
+            j2++;
             channel_counter++;
-            final_channels[index][channel_counter] = input_arr[0][arr3][i][j];
+            final_arr[0][index][row_counter][channel_counter] = input_arr[0][arr3][i3][j3];
+            j3++;
             channel_counter++;
         }
+        i2++;
+        i3++;
+        row_counter ++;
+        channel_counter = 0;
+        j0 = 0; j1 = 0; j2 = 0; j3 = 0;
     }
 }
 
-void construct_final_array(vector <float> & final_flat)
-{
-    int count = 0;
-    for (int i = 0; i < 1; i++)
-    {
-        for (int j = 0; j < 3; j++)
-        {
-            for (int k = 0; k < (DIM * 2); k++)
-            {
-                for (int z = 0; z < (DIM * 2); z++)
-                {
-                    final_arr[i][j][k][z] = final_flat[count];
-                    count++;
-                }
-            }
-        }
-    }
-}
 
 void pixelshuffle(float arr[1][12][8][8], float final_arr[1][3][16][16])
 {
@@ -102,14 +101,6 @@ void pixelshuffle(float arr[1][12][8][8], float final_arr[1][3][16][16])
     }
     for (auto &t : ThreadVector)
         t.join();
-
-    //combine channels into single flat array
-    std::vector<float> final_flat = final_channels[0];
-    final_flat.insert(final_flat.end(), final_channels[1].begin(), final_channels[1].end());
-    final_flat.insert(final_flat.end(), final_channels[2].begin(), final_channels[2].end());
-
-    //construct final arr
-    construct_final_array(final_flat);
 }
 
 int main(){

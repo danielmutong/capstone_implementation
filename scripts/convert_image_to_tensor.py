@@ -43,7 +43,7 @@ with open('temp.txt','r') as f:
         f2.write(f.read())
         f2.write(';')
 os.remove('temp.txt')
-
+os.remove('image.txt')
 
 #reprinting to confirm
 tensor = torch.squeeze(tensor)
