@@ -4,13 +4,14 @@
 #include <iomanip>
 using namespace std;
 
-#define DIM 8
+#define W 4
+#define H 4
 #define CH 12
 #define SCALE 2
 #define BATCH_SIZE 1
 
-float input_arr[BATCH_SIZE][CH][DIM][DIM];
-float final_arr[BATCH_SIZE][CH / (SCALE * SCALE)][DIM * SCALE][DIM * SCALE];
+float input_arr[BATCH_SIZE][CH][W][H];
+float final_arr[BATCH_SIZE][CH / (SCALE * SCALE)][W * SCALE][H * SCALE];
 
 void print_output_array()
 {
@@ -18,9 +19,9 @@ void print_output_array()
     {
         for (int j = 0; j < 3; j++)
         {
-            for (int k = 0; k < (DIM * 2); k++)
+            for (int k = 0; k < (W * 2); k++)
             {
-                for (int z = 0; z < (DIM * 2); z++)
+                for (int z = 0; z < (H * 2); z++)
                 {
                     cout << std::setprecision(1) << std::fixed << final_arr[i][j][k][z] << " ";
                 }
@@ -40,89 +41,89 @@ void print_vector(vector <float> & x )
     cout << endl;
 }
 
-void process_4_channels(int start, int index) 
+
+void process_row(int start, int index, int row_parity, int channel_number)
 {
-    int arr0 = start;
-    int arr1 = start + 1;
-    int arr2 = start + 2;
-    int arr3 = start + 3;
+    int arr = start + channel_number;
     int channel_counter = 0;
     int row_counter = 0;
-    int i0 = 0; int i1 = 0; int i2 = 0; int i3 = 0;
-    int j0 = 0; int j1 = 0; int j2 = 0; int j3 = 0;
+    int channel_number_reset = 0;
+    if (row_parity == 0)
+        row_counter = 0;
 
-    for (int i = 0; i < DIM; i++)
+    else
+        row_counter = 1;
+    if (channel_number == 0 || channel_number == 2)
+        channel_number_reset = 0;
+    else
+        channel_number_reset = 1;
+
+    channel_counter = channel_number_reset;
+    for (int i = 0; i < W; i++)
     {
-        for (int j = 0; j < DIM; j++)
+        for (int j = 0; j < H; j++)
         {
 
-            final_arr[0][index][row_counter][channel_counter] = input_arr[0][arr0][i0][j0];
-            j0++;
-            channel_counter++;
-            final_arr[0][index][row_counter][channel_counter] = input_arr[0][arr1][i1][j1];
-            j1++;
-            channel_counter++;
+            final_arr[0][index][row_counter][channel_counter] = input_arr[0][arr][i][j];
+            channel_counter+=2;
         }
-        i0++;
-        i1++;
-        channel_counter = 0;
-        j0 = 0; j1 = 0; j2 = 0; j3 = 0;
-        row_counter ++;
-
-        for (int j = 0; j < DIM; j++)
-        {
-            final_arr[0][index][row_counter][channel_counter] = input_arr[0][arr2][i2][j2];
-            j2++;
-            channel_counter++;
-            final_arr[0][index][row_counter][channel_counter] = input_arr[0][arr3][i3][j3];
-            j3++;
-            channel_counter++;
-        }
-        i2++;
-        i3++;
-        row_counter ++;
-        channel_counter = 0;
-        j0 = 0; j1 = 0; j2 = 0; j3 = 0;
+        channel_counter = channel_number_reset;
+        row_counter += 2;
     }
 }
 
-
-void pixelshuffle(float arr[1][12][8][8], float final_arr[1][3][16][16])
-{
-    int count = 0;
-
-    //reduce to 3 channels
-    std::vector<std::thread> ThreadVector;
-    for (int i = 0; i < 3; i++)
+    void process_4_channels(int start, int index)
     {
-        std::thread t(process_4_channels, count, i);
-        ThreadVector.push_back(std::move(t));
-        count += 4;
+
+
+        // process a seperate channel each
+        std::thread t0(process_row, start, index, 0, 0);
+        std::thread t1(process_row, start, index, 1, 2);
+        std::thread t2(process_row, start, index, 0, 1);
+        std::thread t3(process_row, start, index, 1, 3);
+        t0.join();
+        t1.join();
+        t2.join();
+        t3.join();
     }
-    for (auto &t : ThreadVector)
-        t.join();
-}
 
-int main(){
-    int count = 0;
-
-    //initialize array
-    for (int i0 = 0; i0 < 1; i0++)
+    void pixelshuffle(float arr[1][12][4][4], float final_arr[1][3][8][8])
     {
-        for (int i1 = 0; i1 < 12; i1++)
+        int count = 0;
+
+        // reduce to 3 channels
+        std::vector<std::thread> ThreadVector;
+        for (int i = 0; i < 3; i++)
         {
-            for (int i2 = 0; i2 < DIM; i2++)
+            std::thread t(process_4_channels, count, i);
+            ThreadVector.push_back(std::move(t));
+            count += 4;
+        }
+        for (auto &t : ThreadVector)
+            t.join();
+    }
+
+    int main()
+    {
+        int count = 0;
+
+        // initialize array
+        for (int i0 = 0; i0 < 1; i0++)
+        {
+            for (int i1 = 0; i1 < 12; i1++)
             {
-                for (int i3 = 0; i3 < DIM; i3++)
+                for (int i2 = 0; i2 < W; i2++)
                 {
-                    input_arr[i0][i1][i2][i3] = count;
-                    count++;
+                    for (int i3 = 0; i3 < H; i3++)
+                    {
+                        input_arr[i0][i1][i2][i3] = count;
+                        count++;
+                    }
                 }
             }
         }
+        pixelshuffle(input_arr, final_arr);
+        // print array
+        print_output_array();
+        return 0;
     }
-    pixelshuffle(input_arr, final_arr);
-    // print array
-    print_output_array();
-    return 0;
-}
