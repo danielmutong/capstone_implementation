@@ -1,7 +1,7 @@
 import re
 import sys
 import os
-file0 = '/Users/danielwang/Local/Fourth Year/Capstone/implementation/8by8shuffle.txt'
+file0 = '/Users/danielwang/Local/Fourth Year/Capstone/implementation/out.txt'
 file1 = '/Users/danielwang/Local/Fourth Year/Capstone/Capstone_Implementation/c_models/out.txt'
 
 with open(file0, 'r') as infile, open('temp0.txt', 'w') as outfile:
