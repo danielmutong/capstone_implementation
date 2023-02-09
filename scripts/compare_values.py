@@ -1,3 +1,5 @@
+#input files are file0 and file1
+
 import re
 import sys
 import os

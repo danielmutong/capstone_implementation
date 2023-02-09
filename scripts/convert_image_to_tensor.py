@@ -1,4 +1,4 @@
-#file generates a c tensor in input_tensor.h
+#file generates a c tensor in input_tensor.h, input image is img
 
 import torchvision.transforms as transforms
 import torch
