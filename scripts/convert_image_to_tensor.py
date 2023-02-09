@@ -1,3 +1,5 @@
+#file generates a c tensor in input_tensor.h
+
 import torchvision.transforms as transforms
 import torch
 from PIL import Image
